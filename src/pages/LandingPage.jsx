@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { C } from '../constants'
-import { Btn, Badge, Stars } from './ui'
+import { Btn, Badge, Stars } from '../components/ui'
 
 export default function LandingPage({ setPage }) {
   const [searchCity, setSearchCity] = useState('')
