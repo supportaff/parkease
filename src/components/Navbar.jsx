@@ -1,7 +1,12 @@
 import { C } from '../constants'
 import { Btn } from './ui'
+import {
+  SignedIn,
+  SignedOut,
+  UserButton,
+} from '@clerk/clerk-react'
 
-export default function Navbar({ setPage, user, setUser }) {
+export default function Navbar({ setPage, user }) {
   return (
     <nav
       style={{
@@ -56,7 +61,7 @@ export default function Navbar({ setPage, user, setUser }) {
       </div>
 
       {/* Nav links */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 28 }}>
         <span
           onClick={() => setPage('search')}
           style={{ fontSize: 14, color: C.muted, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 500, transition: 'color 0.2s' }}
@@ -73,49 +78,36 @@ export default function Navbar({ setPage, user, setUser }) {
         >
           List Your Space
         </span>
+        <SignedIn>
+          <span
+            onClick={() => setPage('owner-dashboard')}
+            style={{ fontSize: 14, color: C.muted, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 500, transition: 'color 0.2s' }}
+            onMouseEnter={e => (e.target.style.color = C.amber)}
+            onMouseLeave={e => (e.target.style.color = C.muted)}
+          >
+            Dashboard
+          </span>
+        </SignedIn>
       </div>
 
-      {/* Actions */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        {!user ? (
-          <>
-            <Btn variant="ghost" size="sm" onClick={() => setPage('login')}>Login</Btn>
-            <Btn variant="primary" size="sm" onClick={() => setPage('signup')}>Sign Up</Btn>
-          </>
-        ) : user.type === 'owner' ? (
-          <>
-            <Btn variant="ghost" size="sm" onClick={() => setPage('owner-dashboard')}>Dashboard</Btn>
-            <Btn variant="outline" size="sm" onClick={() => setUser(null)}>Logout</Btn>
-          </>
-        ) : user.type === 'admin' ? (
-          <>
-            <Btn variant="ghost" size="sm" onClick={() => setPage('admin')}>Admin Panel</Btn>
-            <Btn variant="outline" size="sm" onClick={() => setUser(null)}>Logout</Btn>
-          </>
-        ) : (
-          <>
-            <Btn variant="ghost" size="sm" onClick={() => setPage('search')}>Find Parking</Btn>
-            <div
-              style={{
-                width: 34,
-                height: 34,
-                borderRadius: '50%',
-                background: `linear-gradient(135deg, ${C.teal}, ${C.purple})`,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: 14,
-                fontWeight: 800,
-                cursor: 'pointer',
-                color: '#fff',
-              }}
-              onClick={() => setPage('search')}
-            >
-              {user.name[0].toUpperCase()}
-            </div>
-            <Btn variant="outline" size="sm" onClick={() => setUser(null)}>Logout</Btn>
-          </>
-        )}
+      {/* Auth actions */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <SignedOut>
+          <Btn variant="ghost" size="sm" onClick={() => setPage('login')}>Login</Btn>
+          <Btn variant="primary" size="sm" onClick={() => setPage('signup')}>Sign Up</Btn>
+        </SignedOut>
+
+        <SignedIn>
+          {/* Clerk's built-in user avatar + dropdown (sign out, profile, etc.) */}
+          <UserButton
+            afterSignOutUrl="/"
+            appearance={{
+              elements: {
+                avatarBox: { width: 36, height: 36, borderRadius: 10, border: `2px solid ${C.border}` },
+              },
+            }}
+          />
+        </SignedIn>
       </div>
     </nav>
   )
