@@ -1,4 +1,4 @@
-// ─── DESIGN TOKENS ───────────────────────────────────────────────────────────
+// ─── DESIGN TOKENS ──────────────────────────────────────────────────────────────
 export const C = {
   bg: '#FFFFFF',
   surface: '#F6FBF8',
@@ -23,9 +23,10 @@ export const C = {
   dim: '#7EA88E',
 }
 
-// ─── GLOBAL CSS ───────────────────────────────────────────────────────────
+// ─── GLOBAL CSS ─────────────────────────────────────────────────────────────
 export const GLOBAL_CSS = `
-  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:ital,wght@0,300;0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Syne:wght@600;700;800&family=Inter:ital,wght@0,300;0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap');
+
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   html { scroll-behavior: smooth; }
   body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: #FFFFFF; color: #0A1F14; }
@@ -60,9 +61,48 @@ export const GLOBAL_CSS = `
   .hover-lift { transition: transform 0.2s, box-shadow 0.2s; cursor: pointer; }
   .hover-lift:hover { transform: translateY(-3px); box-shadow: 0 12px 40px #16A34A22; }
   input, select, textarea { font-family: 'Inter', sans-serif; }
+
+  /* ── Google Places Autocomplete dropdown styling ──
+     Our global reset (margin:0; padding:0) breaks Google's pac-container.
+     These rules restore correct appearance and match ParkEase theme. */
+  .pac-container {
+    background: #FFFFFF !important;
+    border: 1.5px solid #CEEADB !important;
+    border-radius: 12px !important;
+    box-shadow: 0 8px 32px rgba(22,163,74,0.14) !important;
+    margin-top: 6px !important;
+    padding: 4px 0 !important;
+    font-family: 'Inter', sans-serif !important;
+    z-index: 9999 !important;
+    overflow: hidden !important;
+  }
+  .pac-container::after { display: none !important; } /* hide 'powered by Google' logo */
+  .pac-item {
+    padding: 10px 16px !important;
+    cursor: pointer !important;
+    font-size: 14px !important;
+    color: #0A1F14 !important;
+    border-top: 1px solid #F0FAF4 !important;
+    line-height: 1.5 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+  }
+  .pac-item:first-child { border-top: none !important; }
+  .pac-item:hover, .pac-item-selected {
+    background: #F6FBF8 !important;
+    color: #0A1F14 !important;
+  }
+  .pac-item-query {
+    color: #16A34A !important;
+    font-weight: 600 !important;
+    font-size: 14px !important;
+  }
+  .pac-icon { display: none !important; } /* hide map pin icon, cleaner look */
+  .pac-matched { color: #16A34A !important; font-weight: 700 !important; }
 `
 
-// ─── SAMPLE DATA ───────────────────────────────────────────────────────────
+// ─── SAMPLE DATA ─────────────────────────────────────────────────────────────
 export const LISTINGS = [
   {
     id: 1,
