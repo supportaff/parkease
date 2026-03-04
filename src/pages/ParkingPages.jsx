@@ -1,14 +1,288 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { C, LISTINGS, AMENITY_ICONS } from '../constants'
 import { Btn, Badge, Input, Stars, Divider } from '../components/ui'
+import { useGoogleMaps } from '../hooks/useGoogleMaps'
 
-// ─── SEARCH PAGE ──────────────────────────────────────────────────────
+// ── Chennai lat/lng for each listing (real coordinates) ──
+const LISTING_COORDS = {
+  1: { lat: 13.0418, lng: 80.2341 }, // T Nagar
+  2: { lat: 13.0850, lng: 80.2101 }, // Anna Nagar
+  3: { lat: 13.0063, lng: 80.2574 }, // Adyar
+  4: { lat: 13.0569, lng: 80.2425 }, // Nungambakkam
+  5: { lat: 12.9815, lng: 80.2180 }, // Velachery
+  6: { lat: 12.8958, lng: 80.2271 }, // OMR
+}
+
+// ── Clean light map style matching ParkEase white/green brand ──
+const MAP_STYLES = [
+  { featureType: 'poi', elementType: 'labels', stylers: [{ visibility: 'off' }] },
+  { featureType: 'poi.business', stylers: [{ visibility: 'off' }] },
+  { featureType: 'transit', elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
+  { featureType: 'water', stylers: [{ color: '#C8E8F5' }] },
+  { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#FEF3C7' }] },
+  { featureType: 'road.arterial', elementType: 'geometry', stylers: [{ color: '#FFFFFF' }] },
+  { featureType: 'road.local', elementType: 'geometry', stylers: [{ color: '#F7F7F7' }] },
+  { featureType: 'landscape', elementType: 'geometry', stylers: [{ color: '#F8FAF9' }] },
+  { featureType: 'poi.park', elementType: 'geometry', stylers: [{ color: '#E2F5E9' }] },
+  { featureType: 'administrative', elementType: 'geometry.stroke', stylers: [{ color: '#E2E8E4' }] },
+]
+
+// ── Full interactive map for SearchPage ─────────────────────────────────
+function MapView({ listings, hoveredId, setHoveredId, setSelectedListing, setPage, userLocation, onMapReady }) {
+  const mapRef = useRef(null)
+  const mapInstanceRef = useRef(null)
+  const markersRef = useRef({})       // id → google.maps.Marker
+  const infoWindowRef = useRef(null)
+  const userMarkerRef = useRef(null)
+  const { loaded: mapsLoaded, apiKeySet } = useGoogleMaps()
+
+  // 1️⃣ Init map once
+  useEffect(() => {
+    if (!mapsLoaded || !mapRef.current || mapInstanceRef.current) return
+    const map = new window.google.maps.Map(mapRef.current, {
+      center: { lat: 13.0827, lng: 80.2707 }, // Chennai centre
+      zoom: 12,
+      styles: MAP_STYLES,
+      zoomControl: true,
+      mapTypeControl: false,
+      streetViewControl: false,
+      fullscreenControl: true,
+      gestureHandling: 'greedy',
+    })
+    mapInstanceRef.current = map
+    infoWindowRef.current = new window.google.maps.InfoWindow()
+    if (onMapReady) onMapReady(map)
+  }, [mapsLoaded])
+
+  // 2️⃣ Add markers when listings change
+  useEffect(() => {
+    if (!mapInstanceRef.current || !mapsLoaded) return
+    Object.values(markersRef.current).forEach(m => m.setMap(null))
+    markersRef.current = {}
+
+    listings.forEach(listing => {
+      const coords = LISTING_COORDS[listing.id]
+      if (!coords) return
+
+      const marker = new window.google.maps.Marker({
+        position: coords,
+        map: mapInstanceRef.current,
+        title: listing.name,
+        icon: {
+          path: window.google.maps.SymbolPath.CIRCLE,
+          fillColor: '#16A34A',
+          fillOpacity: 1,
+          strokeColor: '#ffffff',
+          strokeWeight: 2.5,
+          scale: 11,
+        },
+        label: {
+          text: '₹' + listing.price4w,
+          color: '#ffffff',
+          fontWeight: '700',
+          fontSize: '10px',
+          fontFamily: "'Plus Jakarta Sans', sans-serif",
+        },
+        zIndex: 10,
+      })
+
+      marker.addListener('mouseover', () => {
+        setHoveredId(listing.id)
+        infoWindowRef.current.setContent(`
+          <div style="font-family:'Plus Jakarta Sans',sans-serif;padding:6px 2px;min-width:180px;">
+            <div style="font-weight:800;font-size:14px;color:#0A1F14;margin-bottom:4px;">${listing.name}</div>
+            <div style="font-size:12px;color:#436B53;margin-bottom:8px;">📍 ${listing.area}</div>
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <span style="font-weight:800;font-size:17px;color:#F59E0B;">₹${listing.price4w}/hr</span>
+              <span style="font-size:11px;color:${listing.slotsLeft < 3 ? '#DC2626' : '#16A34A'};font-weight:700;background:${listing.slotsLeft < 3 ? '#FEE2E2' : '#DCFCE7'};padding:2px 8px;border-radius:4px;">${listing.slotsLeft} slots</span>
+            </div>
+            <div style="margin-top:6px;font-size:11px;color:#6B7280;">⭐ ${listing.rating} · ${listing.distance}</div>
+          </div>
+        `)
+        infoWindowRef.current.open(mapInstanceRef.current, marker)
+      })
+      marker.addListener('mouseout', () => {
+        setHoveredId(null)
+        infoWindowRef.current.close()
+      })
+      marker.addListener('click', () => {
+        setSelectedListing(listing)
+        setPage('listing')
+      })
+
+      markersRef.current[listing.id] = marker
+    })
+  }, [listings, mapsLoaded])
+
+  // 3️⃣ Update marker icon on hover (efficient — no marker recreation)
+  useEffect(() => {
+    if (!mapsLoaded) return
+    Object.entries(markersRef.current).forEach(([id, marker]) => {
+      const isHovered = Number(id) === hoveredId
+      marker.setIcon({
+        path: window.google.maps.SymbolPath.CIRCLE,
+        fillColor: isHovered ? '#F59E0B' : '#16A34A',
+        fillOpacity: 1,
+        strokeColor: '#ffffff',
+        strokeWeight: 2.5,
+        scale: isHovered ? 14 : 11,
+      })
+      marker.setZIndex(isHovered ? 100 : 10)
+      marker.setAnimation(isHovered ? window.google.maps.Animation.BOUNCE : null)
+    })
+  }, [hoveredId, mapsLoaded])
+
+  // 4️⃣ User "Near Me" marker
+  useEffect(() => {
+    if (!mapInstanceRef.current || !userLocation || !mapsLoaded) return
+    if (userMarkerRef.current) userMarkerRef.current.setMap(null)
+    userMarkerRef.current = new window.google.maps.Marker({
+      position: userLocation,
+      map: mapInstanceRef.current,
+      title: 'You are here',
+      icon: {
+        path: window.google.maps.SymbolPath.CIRCLE,
+        fillColor: '#0EA5E9',
+        fillOpacity: 1,
+        strokeColor: '#ffffff',
+        strokeWeight: 3,
+        scale: 9,
+      },
+      zIndex: 999,
+    })
+    mapInstanceRef.current.panTo(userLocation)
+    mapInstanceRef.current.setZoom(13)
+  }, [userLocation, mapsLoaded])
+
+  if (!apiKeySet) {
+    return (
+      <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#F0FAF4', gap: 12 }}>
+        <div style={{ fontSize: 36 }}>🗺️</div>
+        <div style={{ color: C.muted, fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 14, textAlign: 'center', maxWidth: 260 }}>Map not configured.<br />Add <code style={{ background: C.surface, padding: '2px 6px', borderRadius: 4, fontSize: 12 }}>VITE_GOOGLE_MAPS_API_KEY</code> to Vercel.</div>
+      </div>
+    )
+  }
+
+  if (!mapsLoaded) {
+    return (
+      <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#F0FAF4', gap: 12 }}>
+        <div style={{ width: 44, height: 44, borderRadius: '50%', background: C.amberGlow, border: `2px solid ${C.amber}44`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>🗺️</div>
+        <div style={{ color: C.muted, fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 14 }}>Loading Chennai map...</div>
+      </div>
+    )
+  }
+
+  return <div ref={mapRef} style={{ width: '100%', height: '100%' }} />
+}
+
+// ── Small read-only map for ListingPage ─────────────────────────────────
+function SmallMap({ listingId, listingName, listingArea }) {
+  const mapRef = useRef(null)
+  const { loaded: mapsLoaded } = useGoogleMaps()
+  const coords = LISTING_COORDS[listingId]
+
+  useEffect(() => {
+    if (!mapsLoaded || !mapRef.current || !coords) return
+    const map = new window.google.maps.Map(mapRef.current, {
+      center: coords,
+      zoom: 15,
+      styles: MAP_STYLES,
+      zoomControl: false,
+      mapTypeControl: false,
+      streetViewControl: false,
+      fullscreenControl: false,
+      gestureHandling: 'none',
+      draggable: false,
+    })
+    new window.google.maps.Marker({
+      position: coords,
+      map,
+      title: listingName,
+      icon: {
+        path: window.google.maps.SymbolPath.CIRCLE,
+        fillColor: '#F59E0B',
+        fillOpacity: 1,
+        strokeColor: '#ffffff',
+        strokeWeight: 2.5,
+        scale: 13,
+      },
+      label: { text: 'P', color: '#ffffff', fontWeight: '800', fontSize: '12px', fontFamily: "'Plus Jakarta Sans', sans-serif" },
+    })
+  }, [mapsLoaded, listingId])
+
+  if (!coords) return null
+
+  const directionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${coords.lat},${coords.lng}&destination_place_id=${encodeURIComponent(listingName)}`
+
+  return (
+    <div style={{ marginTop: 24 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+        <h3 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, fontSize: 16, color: C.text, margin: 0 }}>📍 Location</h3>
+        <a href={directionsUrl} target="_blank" rel="noopener noreferrer"
+          style={{ fontSize: 13, color: C.amber, fontWeight: 700, textDecoration: 'none', fontFamily: "'Plus Jakarta Sans', sans-serif", display: 'flex', alignItems: 'center', gap: 4 }}>
+          Get Directions ↗️
+        </a>
+      </div>
+      <div style={{ borderRadius: 14, overflow: 'hidden', height: 220, border: `1.5px solid ${C.border}`, boxShadow: '0 4px 16px rgba(22,163,74,0.08)' }}>
+        {mapsLoaded
+          ? <div ref={mapRef} style={{ width: '100%', height: '100%' }} />
+          : <div style={{ width: '100%', height: '100%', background: '#F0FAF4', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ color: C.muted, fontSize: 14 }}>Loading map...</span></div>
+        }
+      </div>
+      <div style={{ marginTop: 8, fontSize: 13, color: C.muted }}>📍 {listingArea}</div>
+    </div>
+  )
+}
+
+// ─── SEARCH PAGE ─────────────────────────────────────────────────────────
 export function SearchPage({ setPage, setSelectedListing }) {
-  const [query, setQuery] = useState('Koramangala, Bengaluru')
+  const [query, setQuery] = useState('Chennai')
   const [typeFilter, setTypeFilter] = useState('all')
   const [maxPrice, setMaxPrice] = useState(200)
   const [sort, setSort] = useState('distance')
   const [hoveredId, setHoveredId] = useState(null)
+  const [userLocation, setUserLocation] = useState(null)
+
+  const searchInputRef = useRef(null)
+  const autocompleteRef = useRef(null)
+  const mapInstanceRef = useRef(null) // passed up from MapView via onMapReady
+  const { loaded: mapsLoaded } = useGoogleMaps()
+
+  // Attach Places Autocomplete once map API is ready
+  useEffect(() => {
+    if (!mapsLoaded || !searchInputRef.current || autocompleteRef.current) return
+    autocompleteRef.current = new window.google.maps.places.Autocomplete(searchInputRef.current, {
+      componentRestrictions: { country: 'in' },
+      bounds: new window.google.maps.LatLngBounds(
+        { lat: 12.7, lng: 79.8 },  // SW bound of Greater Chennai
+        { lat: 13.4, lng: 80.6 },  // NE bound
+      ),
+      strictBounds: false,
+      types: ['geocode', 'establishment'],
+    })
+    autocompleteRef.current.addListener('place_changed', () => {
+      const place = autocompleteRef.current.getPlace()
+      if (!place) return
+      const name = place.formatted_address || place.name || ''
+      setQuery(name)
+      if (place.geometry?.location && mapInstanceRef.current) {
+        mapInstanceRef.current.panTo(place.geometry.location)
+        mapInstanceRef.current.setZoom(14)
+      }
+    })
+  }, [mapsLoaded])
+
+  const handleNearMe = () => {
+    if (!navigator.geolocation) return alert('Geolocation not supported in your browser.')
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude }
+        setUserLocation(loc)
+        setQuery('Near My Location')
+      },
+      () => alert('Location access denied. Please allow location in browser settings.')
+    )
+  }
 
   const filtered = LISTINGS.filter(l => {
     if (typeFilter !== 'all' && !l.types.some(t => t.includes(typeFilter === '2w' ? '2' : typeFilter === '3w' ? '3' : '4'))) return false
@@ -21,28 +295,46 @@ export function SearchPage({ setPage, setSelectedListing }) {
 
   return (
     <div style={{ paddingTop: 64, display: 'flex', flexDirection: 'column', height: '100vh' }}>
-      {/* Filters bar */}
-      <div style={{ background: C.surface, borderBottom: `1px solid ${C.border}`, padding: '16px 24px' }}>
+      {/* ── Filters bar ── */}
+      <div style={{ background: C.surface, borderBottom: `1px solid ${C.border}`, padding: '16px 24px', zIndex: 10 }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+          {/* Search input with Places Autocomplete */}
           <div style={{ flex: 1, minWidth: 240, position: 'relative' }}>
-            <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)' }}>📍</span>
-            <input value={query} onChange={e => setQuery(e.target.value)}
-              style={{ width: '100%', background: C.card, border: `1.5px solid ${C.border}`, borderRadius: 10, padding: '11px 14px 11px 42px', color: C.text, fontSize: 15, outline: 'none' }}
+            <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', zIndex: 1 }}>📍</span>
+            <input
+              ref={searchInputRef}
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              placeholder="Search area in Chennai..."
+              style={{ width: '100%', background: C.card, border: `1.5px solid ${C.border}`, borderRadius: 10, padding: '11px 14px 11px 42px', color: C.text, fontSize: 15, outline: 'none', boxSizing: 'border-box' }}
               onFocus={e => (e.target.style.borderColor = C.amber)}
-              onBlur={e => (e.target.style.borderColor = C.border)} />
+              onBlur={e => (e.target.style.borderColor = C.border)}
+            />
           </div>
+
+          {/* Near Me button */}
+          <button onClick={handleNearMe}
+            style={{ padding: '10px 16px', borderRadius: 10, border: `1.5px solid ${userLocation ? C.teal : C.border}`, background: userLocation ? C.tealGlow : 'transparent', color: userLocation ? C.teal : C.muted, fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 600, fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap' }}>
+            📍 Near Me
+          </button>
+
+          {/* Vehicle type filter */}
           <div style={{ display: 'flex', gap: 6 }}>
             {[['all', 'All'], ['2w', '🛵 2W'], ['3w', '🛺 3W'], ['4w', '🚗 4W']].map(([v, l]) => (
               <button key={v} onClick={() => setTypeFilter(v)}
-                style={{ padding: '9px 14px', borderRadius: 8, border: `1.5px solid ${typeFilter === v ? C.amber : C.border}`, background: typeFilter === v ? C.amberGlow : 'transparent', color: typeFilter === v ? C.amber : C.muted, fontFamily: "'Syne', sans-serif", fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>
+                style={{ padding: '9px 14px', borderRadius: 8, border: `1.5px solid ${typeFilter === v ? C.amber : C.border}`, background: typeFilter === v ? C.amberGlow : 'transparent', color: typeFilter === v ? C.amber : C.muted, fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>
                 {l}
               </button>
             ))}
           </div>
+
+          {/* Price range */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ fontSize: 13, color: C.muted, fontFamily: "'Syne', sans-serif" }}>Max ₹{maxPrice}/hr</span>
+            <span style={{ fontSize: 13, color: C.muted, fontFamily: "'Plus Jakarta Sans', sans-serif", whiteSpace: 'nowrap' }}>Max ₹{maxPrice}/hr</span>
             <input type="range" min={20} max={200} value={maxPrice} onChange={e => setMaxPrice(+e.target.value)} style={{ accentColor: C.amber, width: 100 }} />
           </div>
+
+          {/* Sort */}
           <select value={sort} onChange={e => setSort(e.target.value)}
             style={{ background: C.card, border: `1.5px solid ${C.border}`, borderRadius: 10, padding: '10px 14px', color: C.text, fontSize: 14, outline: 'none', cursor: 'pointer' }}>
             <option value="distance">Sort: Distance</option>
@@ -52,13 +344,13 @@ export function SearchPage({ setPage, setSelectedListing }) {
         </div>
       </div>
 
-      {/* Split view */}
+      {/* ── Split view ── */}
       <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '400px 1fr', overflow: 'hidden' }}>
-        {/* Listing cards */}
+        {/* Left: listing cards */}
         <div style={{ overflow: 'auto', padding: '20px 16px 20px 24px', borderRight: `1px solid ${C.border}` }}>
           <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 15 }}>{filtered.length} spots found</span>
-            <Badge color={C.teal}>{query.split(',')[0]}</Badge>
+            <span style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, fontSize: 15 }}>{filtered.length} spots found</span>
+            <Badge color={C.teal}>{query.split(',')[0].trim()}</Badge>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             {filtered.map(l => (
@@ -70,7 +362,7 @@ export function SearchPage({ setPage, setSelectedListing }) {
                 <div style={{ display: 'flex', gap: 14 }}>
                   <div style={{ width: 72, height: 72, borderRadius: 12, background: C.amberGlow, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, flexShrink: 0 }}>{l.cover}</div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 14, color: C.text, marginBottom: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{l.name}</div>
+                    <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, fontSize: 14, color: C.text, marginBottom: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{l.name}</div>
                     <div style={{ fontSize: 13, color: C.muted, marginBottom: 6 }}>📍 {l.area}</div>
                     <Stars rating={l.rating} />
                     <div style={{ marginTop: 6, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
@@ -82,7 +374,7 @@ export function SearchPage({ setPage, setSelectedListing }) {
                     </div>
                   </div>
                   <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                    <div style={{ color: C.amber, fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 18 }}>₹{l.price4w}<span style={{ fontSize: 12, fontWeight: 400 }}>/hr</span></div>
+                    <div style={{ color: C.amber, fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 800, fontSize: 18 }}>₹{l.price4w}<span style={{ fontSize: 12, fontWeight: 400 }}>/hr</span></div>
                     <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>{l.distance}</div>
                     <div style={{ marginTop: 6 }}><Badge color={l.slotsLeft < 3 ? C.red : C.green}>{l.slotsLeft} left</Badge></div>
                   </div>
@@ -92,41 +384,29 @@ export function SearchPage({ setPage, setSelectedListing }) {
           </div>
         </div>
 
-        {/* Map */}
-        <div style={{ position: 'relative', background: '#0A1626', overflow: 'hidden' }}>
-          {[80, 160, 240, 320, 400, 480].map(y => <div key={`h${y}`} style={{ position: 'absolute', left: 0, right: 0, top: y, height: 1, background: C.border + '66' }} />)}
-          {[100, 200, 300, 400, 500, 600, 700].map(x => <div key={`v${x}`} style={{ position: 'absolute', top: 0, bottom: 0, left: x, width: 1, background: C.border + '66' }} />)}
-          {[160, 320].map(y => <div key={`mr${y}`} style={{ position: 'absolute', left: 0, right: 0, top: y, height: 3, background: C.border }} />)}
-          {[200, 500].map(x => <div key={`mc${x}`} style={{ position: 'absolute', top: 0, bottom: 0, left: x, width: 3, background: C.border }} />)}
-
-          {filtered.map((l, i) => {
-            const positions = [{ x: 180, y: 120 }, { x: 320, y: 200 }, { x: 480, y: 100 }, { x: 140, y: 300 }, { x: 600, y: 240 }, { x: 380, y: 340 }]
-            const pos = positions[i] || { x: 200 + i * 60, y: 150 + i * 40 }
-            return (
-              <div key={l.id} style={{ position: 'absolute', left: pos.x, top: pos.y, transform: 'translate(-50%,-50%)', zIndex: 10 }}>
-                {hoveredId === l.id && (
-                  <div style={{ position: 'absolute', bottom: '100%', left: '50%', transform: 'translateX(-50%)', marginBottom: 8, whiteSpace: 'nowrap', background: C.card, border: `1px solid ${C.amber}`, borderRadius: 10, padding: '8px 14px', boxShadow: '0 8px 30px #00000060' }}>
-                    <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 13 }}>{l.name}</div>
-                    <div style={{ fontSize: 12, color: C.amber }}>₹{l.price4w}/hr</div>
-                  </div>
-                )}
-                <div style={{ position: 'absolute', width: 32, height: 32, borderRadius: '50%', border: `2px solid ${C.amber}`, animation: 'pulse-ring 2s infinite', left: -6, top: -6, opacity: hoveredId === l.id ? 1 : 0.3 }} />
-                <div onClick={() => { setSelectedListing(l); setPage('listing') }}
-                  style={{ width: 22, height: 22, borderRadius: '50%', background: hoveredId === l.id ? C.amber : C.amberDark, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800, color: '#0A0F1A', fontFamily: "'Syne', sans-serif", cursor: 'pointer', boxShadow: `0 4px 12px ${C.amberGlow}`, transition: 'all 0.2s', transform: hoveredId === l.id ? 'scale(1.2)' : 'scale(1)' }}>
-                  P
-                </div>
+        {/* Right: Real Google Map */}
+        <div style={{ position: 'relative', overflow: 'hidden' }}>
+          <MapView
+            listings={filtered}
+            hoveredId={hoveredId}
+            setHoveredId={setHoveredId}
+            setSelectedListing={setSelectedListing}
+            setPage={setPage}
+            userLocation={userLocation}
+            onMapReady={map => { mapInstanceRef.current = map }}
+          />
+          {/* Legend overlay */}
+          <div style={{ position: 'absolute', bottom: 20, left: 20, background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(10px)', border: `1px solid ${C.border}`, borderRadius: 10, padding: '10px 14px', fontSize: 12, boxShadow: '0 4px 16px rgba(0,0,0,0.08)', zIndex: 5 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+              <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#16A34A' }} />
+              <span style={{ color: C.muted, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>{filtered.length} parking spots</span>
+            </div>
+            {userLocation && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#0EA5E9' }} />
+                <span style={{ color: C.muted, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>You are here</span>
               </div>
-            )
-          })}
-
-          {/* User dot */}
-          <div style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)' }}>
-            <div style={{ width: 18, height: 18, borderRadius: '50%', background: C.teal, border: '3px solid white', boxShadow: '0 0 0 6px rgba(14,165,233,0.2)' }} />
-          </div>
-
-          <div style={{ position: 'absolute', bottom: 20, right: 20, background: 'rgba(13,25,41,0.9)', backdropFilter: 'blur(10px)', border: `1px solid ${C.border}`, borderRadius: 10, padding: '10px 14px', fontSize: 12 }}>
-            <div style={{ color: C.muted }}>🔵 You are here</div>
-            <div style={{ color: C.amber, fontWeight: 600, fontFamily: "'Syne', sans-serif" }}>🟠 {filtered.length} parking spots</div>
+            )}
           </div>
         </div>
       </div>
@@ -134,7 +414,7 @@ export function SearchPage({ setPage, setSelectedListing }) {
   )
 }
 
-// ─── LISTING PAGE ─────────────────────────────────────────────────────
+// ─── LISTING PAGE ─────────────────────────────────────────────────────────
 export function ListingPage({ listing, setPage }) {
   const [tab, setTab] = useState('overview')
   if (!listing) return null
@@ -146,7 +426,7 @@ export function ListingPage({ listing, setPage }) {
           <button onClick={() => setPage('search')} style={{ background: 'none', border: 'none', color: C.muted, cursor: 'pointer', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>← Back to results</button>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16 }}>
             <div>
-              <h1 style={{ fontFamily: "'Syne', sans-serif", fontSize: 28, fontWeight: 800, marginBottom: 8 }}>{listing.name}</h1>
+              <h1 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 28, fontWeight: 800, marginBottom: 8 }}>{listing.name}</h1>
               <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'center' }}>
                 <span style={{ color: C.muted }}>📍 {listing.area}</span>
                 <Stars rating={listing.rating} />
@@ -155,7 +435,7 @@ export function ListingPage({ listing, setPage }) {
               </div>
             </div>
             <div style={{ textAlign: 'right' }}>
-              <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 32, color: C.amber }}>₹{listing.price4w}<span style={{ fontSize: 16, fontWeight: 400 }}>/hr</span></div>
+              <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 800, fontSize: 32, color: C.amber }}>₹{listing.price4w}<span style={{ fontSize: 16, fontWeight: 400 }}>/hr</span></div>
               <div style={{ fontSize: 14, color: C.muted }}>₹{listing.priceMonthly}/month</div>
             </div>
           </div>
@@ -166,7 +446,7 @@ export function ListingPage({ listing, setPage }) {
         <div>
           {/* Gallery */}
           <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: 10, marginBottom: 32, height: 280, borderRadius: 16, overflow: 'hidden' }}>
-            <div style={{ background: 'linear-gradient(135deg, #0D2137, #0A1A2E)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 80 }}>{listing.cover}</div>
+            <div style={{ background: 'linear-gradient(135deg, #E8F5EE, #D1FAE5)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 80 }}>{listing.cover}</div>
             <div style={{ display: 'grid', gridTemplateRows: '1fr 1fr', gap: 10 }}>
               {['🅿️', '📹'].map((e, i) => <div key={i} style={{ background: C.card, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 36 }}>{e}</div>)}
             </div>
@@ -179,7 +459,7 @@ export function ListingPage({ listing, setPage }) {
           <div style={{ display: 'flex', gap: 4, marginBottom: 24, borderBottom: `1px solid ${C.border}` }}>
             {['overview', 'amenities', 'rules', 'reviews'].map(t => (
               <button key={t} onClick={() => setTab(t)}
-                style={{ padding: '10px 20px', background: 'none', border: 'none', color: tab === t ? C.amber : C.muted, fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 14, cursor: 'pointer', textTransform: 'capitalize', borderBottom: `2px solid ${tab === t ? C.amber : 'transparent'}`, transition: 'all 0.2s' }}>
+                style={{ padding: '10px 20px', background: 'none', border: 'none', color: tab === t ? C.amber : C.muted, fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, fontSize: 14, cursor: 'pointer', textTransform: 'capitalize', borderBottom: `2px solid ${tab === t ? C.amber : 'transparent'}`, transition: 'all 0.2s' }}>
                 {t}
               </button>
             ))}
@@ -191,28 +471,33 @@ export function ListingPage({ listing, setPage }) {
                 {[{ label: 'Total Slots', val: listing.slots, icon: '🅿️' }, { label: 'Slots Left', val: listing.slotsLeft, icon: '✅' }, { label: 'Distance', val: listing.distance, icon: '📍' }].map(i => (
                   <div key={i.label} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: '18px 20px', textAlign: 'center' }}>
                     <div style={{ fontSize: 28, marginBottom: 6 }}>{i.icon}</div>
-                    <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 20 }}>{i.val}</div>
+                    <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 800, fontSize: 20 }}>{i.val}</div>
                     <div style={{ fontSize: 13, color: C.muted }}>{i.label}</div>
                   </div>
                 ))}
               </div>
-              <h3 style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, marginBottom: 12 }}>Vehicle Types Accepted</h3>
+
+              <h3 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, marginBottom: 12 }}>Vehicle Types Accepted</h3>
               <div style={{ display: 'flex', gap: 12, marginBottom: 24 }}>
                 {[['2-wheeler', '🛵'], ['3-wheeler', '🛺'], ['4-wheeler', '🚗']].map(([t, icon]) => (
-                  <div key={t} style={{ padding: '10px 20px', borderRadius: 10, background: listing.types.includes(t) ? C.amberGlow : C.surface, border: `1.5px solid ${listing.types.includes(t) ? C.amber + '66' : C.border}`, color: listing.types.includes(t) ? C.amber : C.dim, fontFamily: "'Syne', sans-serif", fontWeight: 600, fontSize: 14 }}>
+                  <div key={t} style={{ padding: '10px 20px', borderRadius: 10, background: listing.types.includes(t) ? C.amberGlow : C.surface, border: `1.5px solid ${listing.types.includes(t) ? C.amber + '66' : C.border}`, color: listing.types.includes(t) ? C.amber : C.dim, fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 600, fontSize: 14 }}>
                     {icon} {t}
                   </div>
                 ))}
               </div>
-              <h3 style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, marginBottom: 12 }}>Pricing</h3>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+
+              <h3 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, marginBottom: 12 }}>Pricing</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 8 }}>
                 {[{ label: '2-Wheeler / hr', price: `₹${listing.price2w}` }, { label: '4-Wheeler / hr', price: `₹${listing.price4w}` }, { label: 'Monthly', price: `₹${listing.priceMonthly}` }].map(p => (
                   <div key={p.label} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: '16px 18px' }}>
                     <div style={{ fontSize: 13, color: C.muted, marginBottom: 4 }}>{p.label}</div>
-                    <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 22, color: C.amber }}>{p.price}</div>
+                    <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 800, fontSize: 22, color: C.amber }}>{p.price}</div>
                   </div>
                 ))}
               </div>
+
+              {/* 🗺️ Real Google Map */}
+              <SmallMap listingId={listing.id} listingName={listing.name} listingArea={listing.area} />
             </div>
           )}
 
@@ -221,7 +506,7 @@ export function ListingPage({ listing, setPage }) {
               {listing.amenities.map(a => (
                 <div key={a} style={{ display: 'flex', alignItems: 'center', gap: 14, background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: '16px 18px' }}>
                   <div style={{ fontSize: 28 }}>{AMENITY_ICONS[a] || '✨'}</div>
-                  <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 600 }}>{a}</div>
+                  <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 600 }}>{a}</div>
                 </div>
               ))}
             </div>
@@ -248,8 +533,8 @@ export function ListingPage({ listing, setPage }) {
                 <div key={i} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: '18px 20px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <div style={{ width: 38, height: 38, borderRadius: '50%', background: `linear-gradient(135deg, ${C.amber}, ${C.teal})`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Syne', sans-serif", fontWeight: 800, color: '#0A0F1A' }}>{r.name[0]}</div>
-                      <div><div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 600, fontSize: 14 }}>{r.name}</div><Stars rating={r.rating} /></div>
+                      <div style={{ width: 38, height: 38, borderRadius: '50%', background: `linear-gradient(135deg, ${C.amber}, ${C.teal})`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 800, color: '#fff' }}>{r.name[0]}</div>
+                      <div><div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 600, fontSize: 14 }}>{r.name}</div><Stars rating={r.rating} /></div>
                     </div>
                     <span style={{ fontSize: 12, color: C.dim }}>{r.time}</span>
                   </div>
@@ -269,7 +554,7 @@ export function ListingPage({ listing, setPage }) {
   )
 }
 
-// ─── BOOKING WIDGET ───────────────────────────────────────────────────
+// ─── BOOKING WIDGET ──────────────────────────────────────────────────────
 function BookingWidget({ listing, setPage }) {
   const [durationType, setDurationType] = useState('hourly')
   const [hours, setHours] = useState(2)
@@ -282,32 +567,32 @@ function BookingWidget({ listing, setPage }) {
   const total = subtotal + commission
 
   return (
-    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 20, padding: 24, boxShadow: '0 20px 60px #00000060' }}>
-      <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 18, marginBottom: 20 }}>Book This Spot</div>
+    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 20, padding: 24, boxShadow: '0 8px 40px rgba(22,163,74,0.10)' }}>
+      <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, fontSize: 18, marginBottom: 20 }}>Book This Spot</div>
       <div style={{ display: 'flex', gap: 6, marginBottom: 18, background: C.surface, borderRadius: 10, padding: 4 }}>
         {['hourly', 'daily', 'monthly'].map(t => (
           <button key={t} onClick={() => setDurationType(t)}
-            style={{ flex: 1, padding: '8px 4px', borderRadius: 8, border: 'none', background: durationType === t ? C.amber : 'transparent', color: durationType === t ? '#0A0F1A' : C.muted, fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 12, cursor: 'pointer', textTransform: 'capitalize', transition: 'all 0.2s' }}>
+            style={{ flex: 1, padding: '8px 4px', borderRadius: 8, border: 'none', background: durationType === t ? C.amber : 'transparent', color: durationType === t ? '#0A0F1A' : C.muted, fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, fontSize: 12, cursor: 'pointer', textTransform: 'capitalize', transition: 'all 0.2s' }}>
             {t}
           </button>
         ))}
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <div>
-          <label style={{ fontSize: 12, color: C.muted, fontFamily: "'Syne', sans-serif", fontWeight: 600, letterSpacing: '0.05em', display: 'block', marginBottom: 6 }}>VEHICLE</label>
+          <label style={{ fontSize: 12, color: C.muted, fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 600, letterSpacing: '0.05em', display: 'block', marginBottom: 6 }}>VEHICLE</label>
           <select value={vehicleType} onChange={e => setVehicleType(e.target.value)}
             style={{ width: '100%', background: C.surface, border: `1.5px solid ${C.border}`, borderRadius: 10, padding: '11px 14px', color: C.text, fontSize: 14, outline: 'none' }}>
             {listing.types.map(t => <option key={t} value={t}>{t === '2-wheeler' ? '🛵' : t === '3-wheeler' ? '🛺' : '🚗'} {t}</option>)}
           </select>
         </div>
         <div>
-          <label style={{ fontSize: 12, color: C.muted, fontFamily: "'Syne', sans-serif", fontWeight: 600, letterSpacing: '0.05em', display: 'block', marginBottom: 6 }}>DATE</label>
+          <label style={{ fontSize: 12, color: C.muted, fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 600, letterSpacing: '0.05em', display: 'block', marginBottom: 6 }}>DATE</label>
           <input type="date" value={date} onChange={e => setDate(e.target.value)}
-            style={{ width: '100%', background: C.surface, border: `1.5px solid ${C.border}`, borderRadius: 10, padding: '11px 14px', color: C.text, fontSize: 14, outline: 'none', colorScheme: 'dark' }} />
+            style={{ width: '100%', background: C.surface, border: `1.5px solid ${C.border}`, borderRadius: 10, padding: '11px 14px', color: C.text, fontSize: 14, outline: 'none' }} />
         </div>
         {durationType === 'hourly' && (
           <div>
-            <label style={{ fontSize: 12, color: C.muted, fontFamily: "'Syne', sans-serif", fontWeight: 600, letterSpacing: '0.05em', display: 'block', marginBottom: 8 }}>HOURS: {hours}</label>
+            <label style={{ fontSize: 12, color: C.muted, fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 600, letterSpacing: '0.05em', display: 'block', marginBottom: 8 }}>HOURS: {hours}</label>
             <input type="range" min={1} max={12} value={hours} onChange={e => setHours(+e.target.value)} style={{ width: '100%', accentColor: C.amber }} />
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: C.dim, marginTop: 4 }}><span>1h</span><span>12h</span></div>
           </div>
@@ -317,16 +602,16 @@ function BookingWidget({ listing, setPage }) {
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, color: C.muted }}><span>Parking fee</span><span>₹{subtotal}</span></div>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, color: C.muted }}><span>Service charge (12%)</span><span>₹{commission}</span></div>
           <Divider style={{ margin: '4px 0' }} />
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 18 }}><span>Total</span><span style={{ color: C.amber }}>₹{total}</span></div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 800, fontSize: 18 }}><span>Total</span><span style={{ color: C.amber }}>₹{total}</span></div>
         </div>
-        <Btn variant="primary" size="lg" onClick={() => setPage('booking')} style={{ width: '100%', justifyContent: 'center', marginTop: 4 }}>Confirm & Pay →</Btn>
+        <Btn variant="primary" size="lg" onClick={() => setPage('booking')} style={{ width: '100%', justifyContent: 'center', marginTop: 4 }}>Confirm &amp; Pay →</Btn>
         <p style={{ textAlign: 'center', fontSize: 12, color: C.dim }}>🔒 Secure payment via Razorpay</p>
       </div>
     </div>
   )
 }
 
-// ─── BOOKING/PAYMENT PAGE ─────────────────────────────────────────────
+// ─── BOOKING/PAYMENT PAGE ─────────────────────────────────────────────────
 export function BookingPage({ listing, setPage }) {
   const [payMethod, setPayMethod] = useState('upi')
   const [upiId, setUpiId] = useState('')
@@ -338,23 +623,33 @@ export function BookingPage({ listing, setPage }) {
     setTimeout(() => { setProcessing(false); setStep('success') }, 2000)
   }
 
+  const coords = listing ? LISTING_COORDS[listing.id] : null
+  const directionsUrl = coords
+    ? `https://www.google.com/maps/dir/?api=1&destination=${coords.lat},${coords.lng}`
+    : null
+
   if (step === 'success') return (
     <div style={{ paddingTop: 64, minHeight: '100vh', display: 'flex', alignItems: 'center', padding: '80px 24px', position: 'relative' }}>
       <div style={{ position: 'absolute', inset: 0, background: `radial-gradient(ellipse 50% 50% at 50% 40%, ${C.green}22, transparent)` }} />
       <div style={{ maxWidth: 480, margin: '0 auto', textAlign: 'center', position: 'relative' }} className="fade-up">
         <div style={{ width: 100, height: 100, borderRadius: '50%', background: C.green + '22', border: `2px solid ${C.green}44`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 52, margin: '0 auto 28px' }}>✅</div>
-        <h1 style={{ fontFamily: "'Syne', sans-serif", fontSize: 34, fontWeight: 800, marginBottom: 12 }}>Booking Confirmed!</h1>
+        <h1 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 34, fontWeight: 800, marginBottom: 12 }}>Booking Confirmed!</h1>
         <p style={{ color: C.muted, fontSize: 17, marginBottom: 32 }}>Your parking spot at <strong style={{ color: C.text }}>{listing?.name}</strong> is reserved. Drive safe!</p>
         <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 20, padding: 24, marginBottom: 28, textAlign: 'left' }}>
           {[['Booking ID', '#PKE-' + Math.random().toString(36).substr(2, 8).toUpperCase()], ['Location', listing?.area], ['Date', new Date().toLocaleDateString('en-IN', { dateStyle: 'medium' })], ['Duration', '2 hours'], ['Slot No.', 'B-07'], ['Amount Paid', '₹136']].map(([k, v]) => (
             <div key={k} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: `1px solid ${C.border}` }}>
               <span style={{ color: C.muted, fontSize: 14 }}>{k}</span>
-              <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 600, fontSize: 14 }}>{v}</span>
+              <span style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 600, fontSize: 14 }}>{v}</span>
             </div>
           ))}
         </div>
-        <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+        <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
           <Btn variant="primary" onClick={() => setPage('search')}>Find More Parking</Btn>
+          {directionsUrl && (
+            <a href={directionsUrl} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
+              <Btn variant="outline">🗺️ Get Directions</Btn>
+            </a>
+          )}
           <Btn variant="outline" onClick={() => setPage('landing')}>Go Home</Btn>
         </div>
       </div>
@@ -365,20 +660,18 @@ export function BookingPage({ listing, setPage }) {
     <div style={{ paddingTop: 64, minHeight: '100vh', padding: '80px 24px' }}>
       <div style={{ maxWidth: 520, margin: '0 auto' }}>
         <button onClick={() => setPage('listing')} style={{ background: 'none', border: 'none', color: C.muted, cursor: 'pointer', marginBottom: 24, display: 'flex', alignItems: 'center', gap: 8 }}>← Back to listing</button>
-        <h1 style={{ fontFamily: "'Syne', sans-serif", fontSize: 30, fontWeight: 800, marginBottom: 6 }}>Complete Payment</h1>
+        <h1 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 30, fontWeight: 800, marginBottom: 6 }}>Complete Payment</h1>
         <p style={{ color: C.muted, marginBottom: 28 }}>You're one step away from securing your spot.</p>
-
         <div style={{ background: C.card, border: `1px solid ${C.amber}44`, borderRadius: 16, padding: 20, marginBottom: 24, display: 'flex', gap: 16, alignItems: 'center' }}>
           <div style={{ fontSize: 42 }}>{listing?.cover || '🏢'}</div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 16 }}>{listing?.name}</div>
+            <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, fontSize: 16 }}>{listing?.name}</div>
             <div style={{ color: C.muted, fontSize: 14 }}>{listing?.area} • 2 hours • 4-Wheeler</div>
           </div>
-          <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 24, color: C.amber }}>₹136</div>
+          <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 800, fontSize: 24, color: C.amber }}>₹136</div>
         </div>
-
         <div style={{ marginBottom: 20 }}>
-          <p style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 13, color: C.muted, letterSpacing: '0.06em', marginBottom: 12 }}>PAYMENT METHOD</p>
+          <p style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, fontSize: 13, color: C.muted, letterSpacing: '0.06em', marginBottom: 12 }}>PAYMENT METHOD</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {[{ id: 'upi', icon: '📱', label: 'UPI', sub: 'PhonePe, GPay, Paytm, BHIM' }, { id: 'card', icon: '💳', label: 'Debit / Credit Card', sub: 'Visa, Mastercard, RuPay' }, { id: 'netbanking', icon: '🏦', label: 'Net Banking', sub: 'All major banks' }].map(m => (
               <div key={m.id} onClick={() => setPayMethod(m.id)}
@@ -388,16 +681,14 @@ export function BookingPage({ listing, setPage }) {
                 </div>
                 <span style={{ fontSize: 24 }}>{m.icon}</span>
                 <div>
-                  <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 600, fontSize: 15 }}>{m.label}</div>
+                  <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 600, fontSize: 15 }}>{m.label}</div>
                   <div style={{ fontSize: 13, color: C.dim }}>{m.sub}</div>
                 </div>
               </div>
             ))}
           </div>
         </div>
-
         {payMethod === 'upi' && <Input label="UPI ID" value={upiId} onChange={e => setUpiId(e.target.value)} placeholder="yourname@upi" icon="📱" style={{ marginBottom: 20 }} />}
-
         <Btn variant="primary" size="lg" onClick={handlePay} disabled={processing} style={{ width: '100%', justifyContent: 'center' }}>
           {processing ? '⏳ Processing...' : 'Pay ₹136 Securely →'}
         </Btn>
