@@ -1,18 +1,22 @@
-import client from './lib/mongodb.js'
+import { connectDB } from './lib/mongodb.js'
 
 export default async function handler(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*')
   try {
-    await client.connect()
-    await client.db('parkease').command({ ping: 1 })
+    const { db } = await connectDB()
+    await db.command({ ping: 1 })
+    const collections = await db.listCollections().toArray()
     return res.status(200).json({
       status: 'ok',
-      database: 'connected',
+      database: 'parkease',
+      connected: true,
+      collections: collections.map(c => c.name),
       timestamp: new Date().toISOString(),
     })
   } catch (err) {
     return res.status(500).json({
       status: 'error',
-      database: 'disconnected',
+      connected: false,
       error: err.message,
     })
   }

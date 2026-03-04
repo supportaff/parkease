@@ -1,4 +1,4 @@
-import client from './lib/mongodb.js'
+import { connectDB } from './lib/mongodb.js'
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*')
@@ -7,8 +7,7 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end()
 
   try {
-    await client.connect()
-    const db = client.db('parkease')
+    const { db } = await connectDB()
     const col = db.collection('bookings')
 
     if (req.method === 'GET') {
@@ -29,10 +28,9 @@ export default async function handler(req, res) {
       return res.status(201).json({ ...booking, _id: result.insertedId })
     }
 
-    res.setHeader('Allow', ['GET', 'POST'])
-    return res.status(405).json({ error: `Method ${req.method} Not Allowed` })
+    return res.status(405).json({ error: `Method ${req.method} not allowed` })
   } catch (err) {
-    console.error('[/api/bookings]', err)
+    console.error('[/api/bookings]', err.message)
     return res.status(500).json({ error: err.message })
   }
 }

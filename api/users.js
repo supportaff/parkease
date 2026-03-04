@@ -1,4 +1,4 @@
-import client from './lib/mongodb.js'
+import { connectDB } from './lib/mongodb.js'
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*')
@@ -7,20 +7,20 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end()
 
   try {
-    await client.connect()
-    const db = client.db('parkease')
+    const { db } = await connectDB()
     const col = db.collection('users')
 
     if (req.method === 'GET') {
       const { clerkId } = req.query
-      if (!clerkId) return res.status(400).json({ error: 'clerkId required' })
+      if (!clerkId) return res.status(400).json({ error: 'clerkId is required' })
       const user = await col.findOne({ clerkId })
       return res.status(200).json(user || null)
     }
 
     if (req.method === 'POST') {
       const { clerkId, ...data } = req.body
-      if (!clerkId) return res.status(400).json({ error: 'clerkId required' })
+      if (!clerkId) return res.status(400).json({ error: 'clerkId is required' })
+
       const result = await col.updateOne(
         { clerkId },
         {
@@ -29,13 +29,16 @@ export default async function handler(req, res) {
         },
         { upsert: true }
       )
-      return res.status(200).json({ success: true, upserted: !!result.upsertedId })
+      return res.status(200).json({
+        success: true,
+        upserted: !!result.upsertedId,
+        modified: result.modifiedCount,
+      })
     }
 
-    res.setHeader('Allow', ['GET', 'POST'])
-    return res.status(405).json({ error: `Method ${req.method} Not Allowed` })
+    return res.status(405).json({ error: `Method ${req.method} not allowed` })
   } catch (err) {
-    console.error('[/api/users]', err)
+    console.error('[/api/users]', err.message)
     return res.status(500).json({ error: err.message })
   }
 }
