@@ -13,6 +13,7 @@ import { PrivacyPolicyPage, TermsPage } from './pages/LegalPages'
 export default function App() {
   const [page, setPage] = useState('landing')
   const [selectedListing, setSelectedListing] = useState(null)
+  const [selectedBooking, setSelectedBooking] = useState(null) // booking details from BookingWidget
   const [dbRole, setDbRole] = useState(null)
   const [profileComplete, setProfileComplete] = useState(null)
   const [roleLoading, setRoleLoading] = useState(false)
@@ -79,7 +80,6 @@ export default function App() {
     return dbRole === 'owner' ? ownerEl : driverEl
   }
 
-  // Profile setup intercept
   if (isLoaded && isSignedIn && !roleLoading && dbRole && profileComplete === false) {
     return (
       <div style={{ minHeight: '100vh', background: C.bg }}>
@@ -100,8 +100,11 @@ export default function App() {
       case 'privacy':          return <PrivacyPolicyPage setPage={setPage} />
       case 'terms':            return <TermsPage setPage={setPage} />
       case 'search':           return <SearchPage setPage={setPage} setSelectedListing={setSelectedListing} />
-      case 'listing':          return <ListingPage listing={selectedListing} setPage={setPage} />
-      case 'booking':          return requireAuth(<BookingPage listing={selectedListing} setPage={setPage} />, <BookingPage listing={selectedListing} setPage={setPage} />)
+      case 'listing':          return <ListingPage listing={selectedListing} setPage={setPage} setSelectedBooking={setSelectedBooking} />
+      case 'booking':          return requireAuth(
+        <BookingPage listing={selectedListing} booking={selectedBooking} setPage={setPage} user={user} />,
+        <BookingPage listing={selectedListing} booking={selectedBooking} setPage={setPage} user={user} />
+      )
       case 'owner-dashboard':  return requireAuth(<OwnerDashboard user={user} setPage={setPage} />, <DriverDashboard user={user} setPage={setPage} />)
       case 'driver-dashboard': return requireAuth(<OwnerDashboard user={user} setPage={setPage} />, <DriverDashboard user={user} setPage={setPage} />)
       case 'admin':            return requireAuth(<AdminPanel setPage={setPage} />, <LandingPage setPage={setPage} />)
