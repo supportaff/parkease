@@ -3,7 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "description": "ParkEase – Chennai's Parking Marketplace SaaS Platform",
+  "description": "ParkEase \u2013 Chennai's Parking Marketplace SaaS Platform",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -12,6 +12,8 @@
   },
   "dependencies": {
     "@clerk/clerk-react": "^5.0.0",
+    "@vercel/functions": "^1.0.0",
+    "mongodb": "^6.5.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
