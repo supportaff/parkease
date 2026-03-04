@@ -1,6 +1,6 @@
-import { C } from './constants'
+import { C } from '../constants'
 
-// ─── BUTTON ───────────────────────────────────────────────────────────
+// ─── BUTTON ─────────────────────────────────────────────────────────────────────
 export const Btn = ({ children, onClick, variant = 'primary', size = 'md', style = {}, disabled }) => {
   const base = {
     fontFamily: "'Syne', sans-serif",
@@ -60,7 +60,7 @@ export const Btn = ({ children, onClick, variant = 'primary', size = 'md', style
   )
 }
 
-// ─── BADGE ───────────────────────────────────────────────────────────
+// ─── BADGE ─────────────────────────────────────────────────────────────────────
 export const Badge = ({ children, color = C.amber }) => (
   <span
     style={{
@@ -80,7 +80,7 @@ export const Badge = ({ children, color = C.amber }) => (
   </span>
 )
 
-// ─── INPUT ───────────────────────────────────────────────────────────
+// ─── INPUT ─────────────────────────────────────────────────────────────────────
 export const Input = ({ label, type = 'text', value, onChange, placeholder, icon, style = {} }) => (
   <div style={{ display: 'flex', flexDirection: 'column', gap: 6, ...style }}>
     {label && (
@@ -133,7 +133,7 @@ export const Input = ({ label, type = 'text', value, onChange, placeholder, icon
   </div>
 )
 
-// ─── STARS ───────────────────────────────────────────────────────────
+// ─── STARS ─────────────────────────────────────────────────────────────────────
 export const Stars = ({ rating }) => (
   <span style={{ color: C.amber, fontSize: 13 }}>
     {'★'.repeat(Math.floor(rating))}
@@ -142,7 +142,7 @@ export const Stars = ({ rating }) => (
   </span>
 )
 
-// ─── DIVIDER ─────────────────────────────────────────────────────────
+// ─── DIVIDER ───────────────────────────────────────────────────────────────────
 export const Divider = ({ style = {} }) => (
   <div
     style={{
