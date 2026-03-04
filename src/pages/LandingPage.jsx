@@ -1,9 +1,37 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { C } from '../constants'
 import { Btn, Badge, Stars } from '../components/ui'
+import { useGoogleMaps } from '../hooks/useGoogleMaps'
 
 export default function LandingPage({ setPage }) {
   const [searchCity, setSearchCity] = useState('')
+  const searchInputRef = useRef(null)
+  const autocompleteRef = useRef(null)
+  const { loaded: mapsLoaded } = useGoogleMaps()
+
+  // Attach Places Autocomplete once Maps API is ready
+  useEffect(() => {
+    if (!mapsLoaded || !searchInputRef.current || autocompleteRef.current) return
+
+    autocompleteRef.current = new window.google.maps.places.Autocomplete(searchInputRef.current, {
+      componentRestrictions: { country: 'in' },
+      bounds: new window.google.maps.LatLngBounds(
+        { lat: 12.7, lng: 79.8 },
+        { lat: 13.4, lng: 80.6 }
+      ),
+      strictBounds: false,
+      types: ['geocode', 'establishment'],
+    })
+
+    autocompleteRef.current.addListener('place_changed', () => {
+      const place = autocompleteRef.current.getPlace()
+      if (place?.name || place?.formatted_address) {
+        setSearchCity(place.formatted_address || place.name)
+      }
+      // Auto-navigate to search when a place is selected
+      setPage('search')
+    })
+  }, [mapsLoaded])
 
   const stats = [
     { val: '5,000+', label: 'Parking Slots' },
@@ -20,15 +48,6 @@ export default function LandingPage({ setPage }) {
   ]
 
   const areas = ['T Nagar', 'Anna Nagar', 'Adyar', 'Velachery', 'Nungambakkam', 'OMR']
-
-  const footerLinks = [
-    { label: 'About', page: 'landing' },
-    { label: 'Blog', page: 'landing' },
-    { label: 'Careers', page: 'landing' },
-    { label: 'Support', page: 'landing' },
-    { label: 'Privacy Policy', page: 'privacy' },
-    { label: 'Terms & Conditions', page: 'terms' },
-  ]
 
   return (
     <div style={{ paddingTop: 64, background: C.bg }}>
@@ -52,24 +71,33 @@ export default function LandingPage({ setPage }) {
                 Find verified parking in T Nagar, Anna Nagar, Adyar, OMR and more —
                 or earn steady income by listing your unused space.
               </p>
-              {/* Search box */}
+
+              {/* Search box with Places Autocomplete */}
               <div className="fade-up-3" style={{ background: C.card, border: `1.5px solid ${C.border}`, borderRadius: 16, padding: 20, display: 'flex', gap: 12, alignItems: 'flex-end', boxShadow: '0 8px 40px rgba(22,163,74,0.10)' }}>
                 <div style={{ flex: 1 }}>
                   <label style={{ fontSize: 11, color: C.muted, fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, letterSpacing: '0.08em', display: 'block', marginBottom: 8, textTransform: 'uppercase' }}>
                     📍 Where do you need parking?
                   </label>
-                  <input value={searchCity} onChange={e => setSearchCity(e.target.value)} placeholder="T Nagar, Chennai..."
-                    style={{ width: '100%', background: C.surface, border: `1.5px solid ${C.border}`, borderRadius: 10, padding: '12px 14px', color: C.text, fontSize: 15, outline: 'none' }}
+                  <input
+                    ref={searchInputRef}
+                    value={searchCity}
+                    onChange={e => setSearchCity(e.target.value)}
+                    placeholder={mapsLoaded ? 'Type any area in Chennai...' : 'T Nagar, Chennai...'}
+                    style={{ width: '100%', background: C.surface, border: `1.5px solid ${C.border}`, borderRadius: 10, padding: '12px 14px', color: C.text, fontSize: 15, outline: 'none', boxSizing: 'border-box' }}
                     onFocus={e => (e.target.style.borderColor = C.amber)}
-                    onBlur={e => (e.target.style.borderColor = C.border)} />
+                    onBlur={e => (e.target.style.borderColor = C.border)}
+                    onKeyDown={e => e.key === 'Enter' && setPage('search')}
+                  />
                 </div>
                 <Btn variant="primary" size="lg" onClick={() => setPage('search')}>🔍 Find Parking</Btn>
               </div>
-              {/* Popular areas */}
+
+              {/* Popular areas — click to go to search */}
               <div className="fade-up-4" style={{ marginTop: 20, display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
                 <span style={{ fontSize: 13, color: C.dim, fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 600 }}>Areas:</span>
                 {areas.map(c => (
-                  <span key={c} onClick={() => setPage('search')}
+                  <span key={c}
+                    onClick={() => { setSearchCity(c + ', Chennai'); setPage('search') }}
                     style={{ fontSize: 13, color: C.muted, cursor: 'pointer', padding: '4px 14px', borderRadius: 20, border: `1px solid ${C.border}`, background: C.surface, transition: 'all 0.2s', fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 500 }}
                     onMouseEnter={e => { e.target.style.borderColor = C.amber; e.target.style.color = C.amber; e.target.style.background = C.amberGlow }}
                     onMouseLeave={e => { e.target.style.borderColor = C.border; e.target.style.color = C.muted; e.target.style.background = C.surface }}>
@@ -214,15 +242,13 @@ export default function LandingPage({ setPage }) {
       <footer style={{ background: C.surface, borderTop: `1px solid ${C.border}`, padding: '48px 24px' }}>
         <div style={{ maxWidth: 1100, margin: '0 auto' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 40, marginBottom: 40 }}>
-            {/* Brand */}
             <div>
               <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 800, fontSize: 22, marginBottom: 6, color: C.text }}>
                 Park<span style={{ color: C.amber }}>Ease</span>
               </div>
-              <div style={{ color: C.dim, fontSize: 13, marginBottom: 16 }}>Chennai’s Trusted Parking App</div>
+              <div style={{ color: C.dim, fontSize: 13, marginBottom: 16 }}>Chennai's Trusted Parking App</div>
               <div style={{ fontSize: 13, color: C.muted }}>Made with ❤️ in Chennai, Tamil Nadu</div>
             </div>
-            {/* Links */}
             <div style={{ display: 'flex', gap: 60, flexWrap: 'wrap' }}>
               <div>
                 <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, fontSize: 12, color: C.text, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 14 }}>Product</div>
@@ -253,7 +279,6 @@ export default function LandingPage({ setPage }) {
               </div>
             </div>
           </div>
-          {/* Bottom bar */}
           <div style={{ paddingTop: 24, borderTop: `1px solid ${C.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
             <div style={{ color: C.dim, fontSize: 13 }}>© 2026 ParkEase Technologies Pvt. Ltd. All rights reserved.</div>
             <div style={{ display: 'flex', gap: 20 }}>
