@@ -1,34 +1,38 @@
-// ─── DESIGN TOKENS ───────────────────────────────────────────────────
+// ─── DESIGN TOKENS ───────────────────────────────────────────────────────────
 export const C = {
-  bg: '#060D1A',
-  surface: '#0D1929',
-  card: '#111F35',
-  cardHover: '#162540',
-  border: '#1E3050',
-  borderLight: '#243858',
-  amber: '#F59E0B',
-  amberDark: '#D97706',
-  amberGlow: '#F59E0B33',
-  teal: '#0EA5E9',
-  tealGlow: '#0EA5E933',
-  green: '#10B981',
-  red: '#EF4444',
-  purple: '#8B5CF6',
-  text: '#EEF2FF',
-  muted: '#94A3B8',
-  dim: '#4B6282',
+  bg: '#FFFFFF',
+  surface: '#F6FBF8',
+  card: '#FFFFFF',
+  cardHover: '#EEF8F2',
+  border: '#CEEADB',
+  borderLight: '#E2F4EA',
+  // Primary — Green (kept as 'amber' key so all existing C.amber refs work)
+  amber: '#16A34A',
+  amberDark: '#15803D',
+  amberGlow: '#16A34A18',
+  // Secondary — Teal
+  teal: '#0D9488',
+  tealGlow: '#0D948820',
+  // Status
+  green: '#059669',
+  red: '#DC2626',
+  purple: '#7C3AED',
+  // Text
+  text: '#0A1F14',
+  muted: '#436B53',
+  dim: '#7EA88E',
 }
 
-// ─── GLOBAL CSS ───────────────────────────────────────────────────────
+// ─── GLOBAL CSS ───────────────────────────────────────────────────────────
 export const GLOBAL_CSS = `
-  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,400&family=DM+Mono:wght@400;500&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:ital,wght@0,300;0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap');
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   html { scroll-behavior: smooth; }
-  body { font-family: 'Crimson Pro', Georgia, serif; background: #060D1A; color: #EEF2FF; }
+  body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: #FFFFFF; color: #0A1F14; }
 
   ::-webkit-scrollbar { width: 6px; }
-  ::-webkit-scrollbar-track { background: #0D1929; }
-  ::-webkit-scrollbar-thumb { background: #F59E0B55; border-radius: 3px; }
+  ::-webkit-scrollbar-track { background: #F6FBF8; }
+  ::-webkit-scrollbar-thumb { background: #16A34A55; border-radius: 3px; }
 
   @keyframes fadeUp {
     from { opacity: 0; transform: translateY(28px); }
@@ -54,112 +58,112 @@ export const GLOBAL_CSS = `
   .fade-up-4 { animation: fadeUp 0.6s 0.4s ease both; }
   .float     { animation: float 3s ease-in-out infinite; }
   .hover-lift { transition: transform 0.2s, box-shadow 0.2s; cursor: pointer; }
-  .hover-lift:hover { transform: translateY(-3px); box-shadow: 0 12px 40px #F59E0B22; }
-  input, select, textarea { font-family: 'Crimson Pro', serif; }
+  .hover-lift:hover { transform: translateY(-3px); box-shadow: 0 12px 40px #16A34A22; }
+  input, select, textarea { font-family: 'Inter', sans-serif; }
 `
 
-// ─── SAMPLE DATA ─────────────────────────────────────────────────────
+// ─── SAMPLE DATA ───────────────────────────────────────────────────────────
 export const LISTINGS = [
   {
     id: 1,
-    name: 'Koramangala Secure Lot',
-    area: 'Koramangala, Bengaluru',
-    city: 'Bengaluru',
-    price2w: 20,
-    price4w: 60,
-    priceMonthly: 1800,
-    slots: 12,
+    name: 'T Nagar Secure Parking',
+    area: 'T Nagar, Chennai',
+    city: 'Chennai',
+    price2w: 15,
+    price4w: 50,
+    priceMonthly: 1500,
+    slots: 14,
     slotsLeft: 4,
     amenities: ['CCTV', 'Security Guard', 'Gated Entry', 'Lighting'],
     types: ['2-wheeler', '4-wheeler'],
     rating: 4.8,
-    reviews: 142,
-    distance: '0.4 km',
+    reviews: 218,
+    distance: '0.3 km',
     cover: '🏢',
   },
   {
     id: 2,
-    name: 'Indiranagar Covered Parking',
-    area: 'Indiranagar, Bengaluru',
-    city: 'Bengaluru',
-    price2w: 15,
-    price4w: 80,
-    priceMonthly: 2500,
-    slots: 8,
+    name: 'Anna Nagar Covered Lot',
+    area: 'Anna Nagar, Chennai',
+    city: 'Chennai',
+    price2w: 12,
+    price4w: 65,
+    priceMonthly: 2000,
+    slots: 10,
     slotsLeft: 2,
     amenities: ['Covered', 'CCTV', 'EV Charging', '24/7 Access'],
     types: ['2-wheeler', '3-wheeler', '4-wheeler'],
     rating: 4.9,
-    reviews: 88,
-    distance: '0.8 km',
+    reviews: 104,
+    distance: '0.6 km',
     cover: '🏬',
   },
   {
     id: 3,
-    name: 'HSR Layout Open Space',
-    area: 'HSR Layout, Bengaluru',
-    city: 'Bengaluru',
-    price2w: 10,
-    price4w: 45,
-    priceMonthly: 1200,
-    slots: 20,
-    slotsLeft: 11,
+    name: 'Adyar Open Space Parking',
+    area: 'Adyar, Chennai',
+    city: 'Chennai',
+    price2w: 8,
+    price4w: 40,
+    priceMonthly: 1100,
+    slots: 22,
+    slotsLeft: 13,
     amenities: ['Lighting', 'CCTV', 'Nearby Washroom'],
     types: ['2-wheeler', '4-wheeler'],
-    rating: 4.5,
-    reviews: 63,
-    distance: '1.2 km',
+    rating: 4.4,
+    reviews: 76,
+    distance: '1.0 km',
     cover: '🏪',
   },
   {
     id: 4,
-    name: 'Bandra West Premium',
-    area: 'Bandra West, Mumbai',
-    city: 'Mumbai',
-    price2w: 30,
-    price4w: 120,
-    priceMonthly: 4000,
-    slots: 6,
+    name: 'Nungambakkam Premium Lot',
+    area: 'Nungambakkam, Chennai',
+    city: 'Chennai',
+    price2w: 20,
+    price4w: 90,
+    priceMonthly: 3000,
+    slots: 8,
     slotsLeft: 1,
     amenities: ['Covered', 'Security Guard', 'CCTV', 'EV Charging', 'Gated Entry'],
     types: ['4-wheeler'],
     rating: 5.0,
-    reviews: 29,
+    reviews: 41,
     distance: '0.2 km',
-    cover: '🏛️',
+    cover: '🏙️',
   },
   {
     id: 5,
-    name: 'T Nagar Budget Parking',
-    area: 'T Nagar, Chennai',
+    name: 'Velachery IT Park Parking',
+    area: 'Velachery, Chennai',
     city: 'Chennai',
-    price2w: 8,
-    price4w: 35,
-    priceMonthly: 900,
-    slots: 30,
-    slotsLeft: 18,
-    amenities: ['Lighting', 'Open Air'],
+    price2w: 10,
+    price4w: 45,
+    priceMonthly: 1300,
+    slots: 35,
+    slotsLeft: 20,
+    amenities: ['Lighting', 'Open Air', 'CCTV'],
     types: ['2-wheeler', '3-wheeler', '4-wheeler'],
-    rating: 4.2,
-    reviews: 211,
-    distance: '0.5 km',
+    rating: 4.3,
+    reviews: 189,
+    distance: '0.7 km',
     cover: '🏗️',
   },
   {
     id: 6,
-    name: 'Sector 18 Noida Hub',
-    area: 'Sector 18, Noida',
-    city: 'Noida',
-    price2w: 12,
-    price4w: 50,
-    priceMonthly: 1500,
-    slots: 15,
-    slotsLeft: 7,
+    name: 'OMR Tech Corridor Parking',
+    area: 'OMR, Chennai',
+    city: 'Chennai',
+    price2w: 10,
+    price4w: 55,
+    priceMonthly: 1600,
+    slots: 18,
+    slotsLeft: 9,
     amenities: ['CCTV', 'Gated Entry', '24/7 Access', 'Security Guard'],
     types: ['2-wheeler', '4-wheeler'],
-    rating: 4.6,
-    reviews: 77,
-    distance: '0.6 km',
+    rating: 4.7,
+    reviews: 93,
+    distance: '0.5 km',
     cover: '🏢',
   },
 ]
@@ -172,6 +176,6 @@ export const AMENITY_ICONS = {
   Lighting: '💡',
   'EV Charging': '⚡',
   '24/7 Access': '🕐',
-  'Nearby Washroom': '🚿',
+  'Nearby Washroom': '🛃',
   'Open Air': '🌿',
 }

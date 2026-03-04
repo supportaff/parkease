@@ -6,23 +6,23 @@ export default function LandingPage({ setPage }) {
   const [searchCity, setSearchCity] = useState('')
 
   const stats = [
-    { val: '50,000+', label: 'Parking Slots' },
-    { val: '120+', label: 'Cities' },
-    { val: '2.4L+', label: 'Happy Drivers' },
-    { val: '₹18 Cr+', label: 'Owner Earnings' },
+    { val: '5,000+', label: 'Parking Slots' },
+    { val: '50+', label: 'Chennai Areas' },
+    { val: '12,000+', label: 'Happy Drivers' },
+    { val: '₹2 Cr+', label: 'Owner Earnings' },
   ]
 
   const steps = [
-    { icon: '🔍', title: 'Search by Location', desc: 'Enter your city or drop a pin. Instantly see all nearby parking spaces.' },
+    { icon: '🔍', title: 'Search by Location', desc: 'Enter your area in Chennai. Instantly see all nearby verified parking spaces.' },
     { icon: '🅿️', title: 'Pick Your Spot', desc: 'Compare prices, amenities, and photos. Choose what fits best.' },
     { icon: '💳', title: 'Book & Pay', desc: 'Secure booking in seconds. Pay via UPI, debit or credit card.' },
     { icon: '🚗', title: 'Drive In', desc: 'Get confirmation, drive to your spot, and park with zero stress.' },
   ]
 
-  const cities = ['Bengaluru', 'Mumbai', 'Delhi', 'Chennai', 'Hyderabad', 'Pune']
+  const areas = ['T Nagar', 'Anna Nagar', 'Adyar', 'Velachery', 'Nungambakkam', 'OMR']
 
   return (
-    <div style={{ paddingTop: 64 }}>
+    <div style={{ paddingTop: 64, background: C.bg }}>
       {/* ── HERO ── */}
       <section
         style={{
@@ -46,7 +46,7 @@ export default function LandingPage({ setPage }) {
           style={{
             position: 'absolute',
             inset: 0,
-            opacity: 0.04,
+            opacity: 0.035,
             backgroundImage: `linear-gradient(${C.amber} 1px, transparent 1px), linear-gradient(90deg, ${C.amber} 1px, transparent 1px)`,
             backgroundSize: '40px 40px',
           }}
@@ -57,16 +57,17 @@ export default function LandingPage({ setPage }) {
             {/* Left */}
             <div>
               <div className="fade-up" style={{ marginBottom: 20 }}>
-                <Badge color={C.teal}>🇮🇳 India's Parking Marketplace</Badge>
+                <Badge color={C.teal}>📍 Chennai’s #1 Parking App</Badge>
               </div>
               <h1
                 className="fade-up-1"
                 style={{
-                  fontFamily: "'Syne', sans-serif",
-                  fontSize: 'clamp(40px, 5vw, 62px)',
+                  fontFamily: "'Plus Jakarta Sans', sans-serif",
+                  fontSize: 'clamp(38px, 5vw, 60px)',
                   fontWeight: 800,
                   lineHeight: 1.1,
                   letterSpacing: '-0.03em',
+                  color: C.text,
                   marginBottom: 20,
                 }}
               >
@@ -76,10 +77,11 @@ export default function LandingPage({ setPage }) {
               </h1>
               <p
                 className="fade-up-2"
-                style={{ fontSize: 18, color: C.muted, lineHeight: 1.7, marginBottom: 36, maxWidth: 480 }}
+                style={{ fontSize: 17, color: C.muted, lineHeight: 1.8, marginBottom: 36, maxWidth: 480, fontWeight: 400 }}
               >
-                ParkEase connects land owners with vehicle owners across India. Find verified parking for
-                2-wheelers, 3-wheelers, and 4-wheelers — or earn by renting your unused land.
+                ParkEase connects land owners with vehicle owners across Chennai.
+                Find verified parking in T Nagar, Anna Nagar, Adyar, OMR and more —
+                or earn steady income by listing your unused space.
               </p>
 
               {/* Search box */}
@@ -87,33 +89,34 @@ export default function LandingPage({ setPage }) {
                 className="fade-up-3"
                 style={{
                   background: C.card,
-                  border: `1px solid ${C.border}`,
+                  border: `1.5px solid ${C.border}`,
                   borderRadius: 16,
                   padding: 20,
                   display: 'flex',
                   gap: 12,
                   alignItems: 'flex-end',
-                  boxShadow: '0 20px 60px #00000060',
+                  boxShadow: '0 8px 40px rgba(22,163,74,0.10)',
                 }}
               >
                 <div style={{ flex: 1 }}>
                   <label
                     style={{
-                      fontSize: 12,
+                      fontSize: 11,
                       color: C.muted,
-                      fontFamily: "'Syne', sans-serif",
-                      fontWeight: 600,
-                      letterSpacing: '0.06em',
+                      fontFamily: "'Plus Jakarta Sans', sans-serif",
+                      fontWeight: 700,
+                      letterSpacing: '0.08em',
                       display: 'block',
                       marginBottom: 8,
+                      textTransform: 'uppercase',
                     }}
                   >
-                    📍 WHERE DO YOU NEED PARKING?
+                    📍 Where do you need parking?
                   </label>
                   <input
                     value={searchCity}
                     onChange={e => setSearchCity(e.target.value)}
-                    placeholder="Koramangala, Bengaluru..."
+                    placeholder="T Nagar, Chennai..."
                     style={{
                       width: '100%',
                       background: C.surface,
@@ -121,7 +124,7 @@ export default function LandingPage({ setPage }) {
                       borderRadius: 10,
                       padding: '12px 14px',
                       color: C.text,
-                      fontSize: 16,
+                      fontSize: 15,
                       outline: 'none',
                     }}
                     onFocus={e => (e.target.style.borderColor = C.amber)}
@@ -133,10 +136,10 @@ export default function LandingPage({ setPage }) {
                 </Btn>
               </div>
 
-              {/* Popular cities */}
-              <div className="fade-up-4" style={{ marginTop: 20, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                <span style={{ fontSize: 13, color: C.dim, fontFamily: "'Syne', sans-serif" }}>Popular:</span>
-                {cities.map(c => (
+              {/* Popular areas */}
+              <div className="fade-up-4" style={{ marginTop: 20, display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+                <span style={{ fontSize: 13, color: C.dim, fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 600 }}>Areas:</span>
+                {areas.map(c => (
                   <span
                     key={c}
                     onClick={() => setPage('search')}
@@ -144,13 +147,16 @@ export default function LandingPage({ setPage }) {
                       fontSize: 13,
                       color: C.muted,
                       cursor: 'pointer',
-                      padding: '4px 12px',
+                      padding: '4px 14px',
                       borderRadius: 20,
                       border: `1px solid ${C.border}`,
+                      background: C.surface,
                       transition: 'all 0.2s',
+                      fontFamily: "'Plus Jakarta Sans', sans-serif",
+                      fontWeight: 500,
                     }}
-                    onMouseEnter={e => { e.target.style.borderColor = C.amber; e.target.style.color = C.amber }}
-                    onMouseLeave={e => { e.target.style.borderColor = C.border; e.target.style.color = C.muted }}
+                    onMouseEnter={e => { e.target.style.borderColor = C.amber; e.target.style.color = C.amber; e.target.style.background = C.amberGlow }}
+                    onMouseLeave={e => { e.target.style.borderColor = C.border; e.target.style.color = C.muted; e.target.style.background = C.surface }}
                   >
                     {c}
                   </span>
@@ -164,17 +170,17 @@ export default function LandingPage({ setPage }) {
                 className="float"
                 style={{
                   background: C.card,
-                  border: `1px solid ${C.border}`,
+                  border: `1.5px solid ${C.border}`,
                   borderRadius: 24,
                   overflow: 'hidden',
-                  boxShadow: '0 30px 80px #00000080',
+                  boxShadow: '0 20px 60px rgba(22,163,74,0.15)',
                 }}
               >
                 {/* Map mockup */}
                 <div
                   style={{
                     height: 300,
-                    background: 'linear-gradient(135deg, #0D2137, #0A1A2E)',
+                    background: 'linear-gradient(135deg, #E8F5EE, #F0FAF4)',
                     position: 'relative',
                     overflow: 'hidden',
                   }}
@@ -211,8 +217,8 @@ export default function LandingPage({ setPage }) {
                           justifyContent: 'center',
                           fontSize: 11,
                           fontWeight: 800,
-                          color: '#0A0F1A',
-                          fontFamily: "'Syne', sans-serif",
+                          color: '#fff',
+                          fontFamily: "'Plus Jakarta Sans', sans-serif",
                         }}
                       >
                         P
@@ -225,7 +231,7 @@ export default function LandingPage({ setPage }) {
                       bottom: 12,
                       left: 12,
                       right: 12,
-                      background: 'rgba(6,13,26,0.85)',
+                      background: 'rgba(255,255,255,0.92)',
                       borderRadius: 10,
                       padding: '10px 14px',
                       backdropFilter: 'blur(10px)',
@@ -233,7 +239,7 @@ export default function LandingPage({ setPage }) {
                     }}
                   >
                     <div style={{ fontSize: 12, color: C.muted }}>Showing results near</div>
-                    <div style={{ fontSize: 15, color: C.text, fontWeight: 600 }}>Koramangala, Bengaluru</div>
+                    <div style={{ fontSize: 15, color: C.text, fontWeight: 600, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>T Nagar, Chennai</div>
                   </div>
                 </div>
                 {/* Card preview */}
@@ -244,6 +250,7 @@ export default function LandingPage({ setPage }) {
                       height: 52,
                       borderRadius: 12,
                       background: C.amberGlow,
+                      border: `1px solid ${C.border}`,
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -253,14 +260,14 @@ export default function LandingPage({ setPage }) {
                     🏢
                   </div>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 14, color: C.text }}>
-                      Koramangala Secure Lot
+                    <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, fontSize: 14, color: C.text }}>
+                      T Nagar Secure Parking
                     </div>
-                    <div style={{ fontSize: 13, color: C.muted }}>0.4 km away • 4 slots left</div>
+                    <div style={{ fontSize: 13, color: C.muted }}>0.3 km away • 4 slots left</div>
                   </div>
                   <div style={{ textAlign: 'right' }}>
-                    <div style={{ color: C.amber, fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 17 }}>
-                      ₹60/hr
+                    <div style={{ color: C.amber, fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 800, fontSize: 17 }}>
+                      ₹50/hr
                     </div>
                     <Stars rating={4.8} />
                   </div>
@@ -272,17 +279,19 @@ export default function LandingPage({ setPage }) {
                   position: 'absolute',
                   top: -16,
                   right: -16,
-                  background: C.green + '22',
+                  background: C.green + '18',
                   border: `1px solid ${C.green}44`,
                   borderRadius: 12,
                   padding: '10px 16px',
                   backdropFilter: 'blur(10px)',
+                  background: '#fff',
+                  boxShadow: '0 4px 20px rgba(5,150,105,0.15)',
                 }}
               >
-                <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, color: C.green, fontSize: 18 }}>
-                  ₹60/hr
+                <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 800, color: C.green, fontSize: 18 }}>
+                  ₹50/hr
                 </div>
-                <div style={{ fontSize: 11, color: C.muted }}>Best nearby</div>
+                <div style={{ fontSize: 11, color: C.dim }}>Best nearby</div>
               </div>
             </div>
           </div>
@@ -310,8 +319,8 @@ export default function LandingPage({ setPage }) {
         >
           {[...Array(2)].fill(null).map((_, rep) =>
             [
-              '🅿️ 50,000+ Parking Slots',
-              '🌆 120 Cities',
+              '🅿️ 5,000+ Parking Slots',
+              '📍 Chennai City Coverage',
               '⭐ 4.8 Average Rating',
               '💰 Earn up to ₹80,000/month',
               '🔒 Verified Listings Only',
@@ -322,7 +331,7 @@ export default function LandingPage({ setPage }) {
               <span
                 key={`${rep}-${i}`}
                 style={{
-                  fontFamily: "'Syne', sans-serif",
+                  fontFamily: "'Plus Jakarta Sans', sans-serif",
                   fontSize: 13,
                   fontWeight: 600,
                   color: i % 2 === 0 ? C.amber : C.muted,
@@ -345,16 +354,17 @@ export default function LandingPage({ setPage }) {
               className="hover-lift"
               style={{
                 background: C.card,
-                border: `1px solid ${C.border}`,
+                border: `1.5px solid ${C.border}`,
                 borderRadius: 16,
                 padding: '30px 24px',
                 textAlign: 'center',
+                boxShadow: '0 2px 12px rgba(22,163,74,0.06)',
               }}
             >
-              <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 36, color: C.amber, marginBottom: 6 }}>
+              <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 800, fontSize: 34, color: C.amber, marginBottom: 6 }}>
                 {s.val}
               </div>
-              <div style={{ color: C.muted, fontSize: 15 }}>{s.label}</div>
+              <div style={{ color: C.muted, fontSize: 14, fontWeight: 500 }}>{s.label}</div>
             </div>
           ))}
         </div>
@@ -367,17 +377,18 @@ export default function LandingPage({ setPage }) {
             <Badge color={C.teal}>How It Works</Badge>
             <h2
               style={{
-                fontFamily: "'Syne', sans-serif",
-                fontSize: 40,
+                fontFamily: "'Plus Jakarta Sans', sans-serif",
+                fontSize: 38,
                 fontWeight: 800,
                 letterSpacing: '-0.02em',
                 marginTop: 16,
                 marginBottom: 12,
+                color: C.text,
               }}
             >
               Park in <span style={{ color: C.amber }}>4 simple steps</span>
             </h2>
-            <p style={{ color: C.muted, fontSize: 17 }}>From search to parked in under 60 seconds.</p>
+            <p style={{ color: C.muted, fontSize: 16 }}>From search to parked in under 60 seconds.</p>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 24 }}>
             {steps.map((s, i) => (
@@ -387,29 +398,29 @@ export default function LandingPage({ setPage }) {
                 style={{
                   background: C.card,
                   borderRadius: 16,
-                  border: `1px solid ${C.border}`,
+                  border: `1.5px solid ${C.border}`,
                   padding: '32px 24px',
                   position: 'relative',
                 }}
               >
-                <div style={{ fontSize: 40, marginBottom: 16 }}>{s.icon}</div>
+                <div style={{ fontSize: 38, marginBottom: 16 }}>{s.icon}</div>
                 <div
                   style={{
                     position: 'absolute',
                     top: 24,
                     right: 24,
-                    fontFamily: "'DM Mono', monospace",
-                    fontWeight: 700,
-                    fontSize: 13,
+                    fontFamily: "'JetBrains Mono', monospace",
+                    fontWeight: 600,
+                    fontSize: 12,
                     color: C.dim,
                   }}
                 >
                   0{i + 1}
                 </div>
-                <h3 style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 17, marginBottom: 10 }}>
+                <h3 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, fontSize: 16, marginBottom: 10, color: C.text }}>
                   {s.title}
                 </h3>
-                <p style={{ fontSize: 15, color: C.muted, lineHeight: 1.6 }}>{s.desc}</p>
+                <p style={{ fontSize: 14, color: C.muted, lineHeight: 1.7 }}>{s.desc}</p>
               </div>
             ))}
           </div>
@@ -424,18 +435,19 @@ export default function LandingPage({ setPage }) {
               <Badge color={C.green}>For Land Owners</Badge>
               <h2
                 style={{
-                  fontFamily: "'Syne', sans-serif",
+                  fontFamily: "'Plus Jakarta Sans', sans-serif",
                   fontWeight: 800,
-                  fontSize: 40,
+                  fontSize: 38,
                   letterSpacing: '-0.02em',
                   margin: '16px 0 20px',
+                  color: C.text,
                 }}
               >
-                Unused land?
+                Unused land in Chennai?
                 <br />
                 <span style={{ color: C.amber }}>Start earning today.</span>
               </h2>
-              <p style={{ fontSize: 17, color: C.muted, lineHeight: 1.7, marginBottom: 32 }}>
+              <p style={{ fontSize: 16, color: C.muted, lineHeight: 1.8, marginBottom: 32 }}>
                 Convert your vacant plot, terrace, or driveway into a steady income stream. We handle
                 booking, payments, and security verification — you just collect earnings.
               </p>
@@ -452,17 +464,19 @@ export default function LandingPage({ setPage }) {
                       height: 22,
                       borderRadius: '50%',
                       background: C.green + '22',
-                      border: `1px solid ${C.green}44`,
+                      border: `1.5px solid ${C.green}55`,
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       fontSize: 12,
                       color: C.green,
+                      fontWeight: 700,
+                      flexShrink: 0,
                     }}
                   >
                     ✓
                   </div>
-                  <span style={{ fontSize: 16, color: C.text }}>{f}</span>
+                  <span style={{ fontSize: 15, color: C.text }}>{f}</span>
                 </div>
               ))}
               <div style={{ marginTop: 36, display: 'flex', gap: 12 }}>
@@ -475,27 +489,28 @@ export default function LandingPage({ setPage }) {
             <div
               style={{
                 background: C.card,
-                border: `1px solid ${C.border}`,
+                border: `1.5px solid ${C.border}`,
                 borderRadius: 20,
                 padding: 28,
-                boxShadow: '0 30px 80px #00000060',
+                boxShadow: '0 16px 50px rgba(22,163,74,0.12)',
               }}
             >
               <div
                 style={{
-                  fontFamily: "'Syne', sans-serif",
+                  fontFamily: "'Plus Jakarta Sans', sans-serif",
                   fontWeight: 700,
                   marginBottom: 20,
                   color: C.muted,
-                  fontSize: 13,
-                  letterSpacing: '0.06em',
+                  fontSize: 11,
+                  letterSpacing: '0.10em',
+                  textTransform: 'uppercase',
                 }}
               >
-                YOUR ESTIMATED EARNINGS
+                Your Estimated Earnings
               </div>
               {[
                 { label: '2-Wheeler Slot (×4)', rate: '₹15/hr', monthly: '₹12,600' },
-                { label: '4-Wheeler Slot (×2)', rate: '₹60/hr', monthly: '₹25,200' },
+                { label: '4-Wheeler Slot (×2)', rate: '₹50/hr', monthly: '₹21,000' },
               ].map((row, i) => (
                 <div
                   key={i}
@@ -508,10 +523,10 @@ export default function LandingPage({ setPage }) {
                   }}
                 >
                   <div>
-                    <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 600 }}>{row.label}</div>
-                    <div style={{ fontSize: 13, color: C.muted }}>{row.rate}</div>
+                    <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 600, fontSize: 14, color: C.text }}>{row.label}</div>
+                    <div style={{ fontSize: 13, color: C.muted, marginTop: 2 }}>{row.rate}</div>
                   </div>
-                  <div style={{ color: C.green, fontWeight: 700, fontFamily: "'Syne', sans-serif", fontSize: 18 }}>
+                  <div style={{ color: C.green, fontWeight: 700, fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 17 }}>
                     {row.monthly}/mo
                   </div>
                 </div>
@@ -521,18 +536,18 @@ export default function LandingPage({ setPage }) {
                   marginTop: 20,
                   padding: '16px 20px',
                   background: C.amberGlow,
-                  border: `1px solid ${C.amber}44`,
+                  border: `1.5px solid ${C.amber}33`,
                   borderRadius: 12,
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
                 }}
               >
-                <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, color: C.amber }}>Total Monthly</div>
-                <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 28, color: C.amber }}>₹37,800</div>
+                <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 700, color: C.amber, fontSize: 14 }}>Total Monthly</div>
+                <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 800, fontSize: 28, color: C.amber }}>₹33,600</div>
               </div>
               <p style={{ fontSize: 12, color: C.dim, marginTop: 12, textAlign: 'center' }}>
-                *Based on 70% occupancy. Actual earnings may vary.
+                *Based on 70% occupancy in Chennai. Actual earnings may vary.
               </p>
             </div>
           </div>
@@ -553,16 +568,16 @@ export default function LandingPage({ setPage }) {
           }}
         >
           <div>
-            <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 24, marginBottom: 6 }}>
+            <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 800, fontSize: 22, marginBottom: 4, color: C.text }}>
               Park<span style={{ color: C.amber }}>Ease</span>
             </div>
-            <div style={{ color: C.dim, fontSize: 14 }}>India's Trusted Parking Marketplace</div>
+            <div style={{ color: C.dim, fontSize: 13 }}>Chennai’s Trusted Parking App</div>
           </div>
-          <div style={{ display: 'flex', gap: 32, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: 28, flexWrap: 'wrap' }}>
             {['About', 'Blog', 'Careers', 'Support', 'Privacy', 'Terms'].map(l => (
               <span
                 key={l}
-                style={{ color: C.muted, fontSize: 14, cursor: 'pointer', transition: 'color 0.2s' }}
+                style={{ color: C.muted, fontSize: 14, cursor: 'pointer', transition: 'color 0.2s', fontWeight: 500 }}
                 onMouseEnter={e => (e.target.style.color = C.amber)}
                 onMouseLeave={e => (e.target.style.color = C.muted)}
               >
