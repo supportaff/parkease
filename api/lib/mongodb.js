@@ -1,21 +1,18 @@
 import { MongoClient } from 'mongodb'
 
-const uri = process.env.MONGODB_URI
+// Support both ZLIGN_MONGODB_URI (Vercel project var) and MONGODB_URI (fallback)
+const uri = process.env.ZLIGN_MONGODB_URI || process.env.MONGODB_URI
 const options = { appName: 'parkease', maxPoolSize: 10, serverSelectionTimeoutMS: 5000 }
 
-// Connection cache — reused across warm serverless invocations
 let cachedClient = null
 let cachedDb = null
 
 export async function connectDB() {
-  // Return cached connection if available
-  if (cachedClient && cachedDb) {
-    return { client: cachedClient, db: cachedDb }
-  }
+  if (cachedClient && cachedDb) return { client: cachedClient, db: cachedDb }
 
   if (!uri) {
     throw new Error(
-      'MONGODB_URI is not set. Add it in Vercel → Settings → Environment Variables'
+      'MongoDB URI not found. Set ZLIGN_MONGODB_URI in Vercel → Settings → Environment Variables'
     )
   }
 
